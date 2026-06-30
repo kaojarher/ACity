@@ -2,24 +2,26 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>江山築邑錄 - 漸進式營造版</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-select=none">
+    <title>江山築邑錄 - 策略深度升級版</title>
     <style>
         :root {
-            --bg-color: #f4eae1;
-            --panel-bg: rgba(255, 248, 240, 0.96);
+            --bg-color: #f2e6d9;
+            --panel-bg: #fffbf7;
             --border-color: #8c7661;
             --text-color: #4a3c31;
             --btn-active: #b85c38;
-            --unlocked-color: #4f772d;
-            --building-color: #d8a47f;
+            --unlocked-color: #386641;
+            --building-color: #bc6c25;
+            --event-bg: #4a3c31;
         }
 
-        * {
+        *, *::before, *::after {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
             font-family: "PingFang TC", "Microsoft JhengHei", sans-serif;
+            -webkit-user-select: none;
             user-select: none;
         }
 
@@ -27,19 +29,21 @@
             background-color: var(--bg-color);
             color: var(--text-color);
             overflow: hidden;
+            position: relative;
+            width: 100vw;
             height: 100vh;
-            display: flex;
-            flex-direction: row;
         }
 
-        /* 側邊控制與街區發展面板 */
+        /* 💻 預設電腦版版面 💻 */
         aside {
-            width: 340px;
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 350px;
             background: var(--panel-bg);
             border-right: 3px double var(--border-color);
             display: flex;
             flex-direction: column;
-            z-index: 10;
+            z-index: 20;
             box-shadow: 2px 0 15px rgba(0,0,0,0.1);
         }
 
@@ -50,63 +54,79 @@
         }
 
         .aside-header h2 {
-            font-size: 1.4rem;
-            margin-bottom: 5px;
+            font-size: 1.3rem;
             text-align: center;
+            margin-bottom: 5px;
+            letter-spacing: 2px;
         }
 
         .status-group {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-            font-size: 0.95rem;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            font-size: 0.85rem;
             font-weight: bold;
+            text-align: center;
             background: #fff;
-            padding: 10px;
+            padding: 8px;
             border-radius: 6px;
             border: 1px solid var(--border-color);
         }
 
-        .status-item span {
+        .status-card span {
+            display: block;
+            font-size: 1.1rem;
             color: var(--btn-active);
         }
 
+        .rank-banner {
+            background: #4a3c31;
+            color: #f4eae1;
+            text-align: center;
+            font-size: 0.8rem;
+            padding: 3px 0;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
         .grid-panel-title {
-            padding: 10px 15px 0 15px;
-            font-size: 1rem;
+            padding: 10px 15px 4px 15px;
+            font-size: 0.9rem;
             font-weight: bold;
             color: #6b5847;
+            background: #fdfaf6;
         }
 
         .blocks-grid {
             flex: 1;
             overflow-y: auto;
-            padding: 15px;
+            padding: 12px;
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 10px;
+            background: #fdfaf6;
         }
 
-        /* 街區按鈕樣式與進度條包裝 */
         .block-btn {
-            background: #fdfaf6;
+            background: #fff;
             border: 1px solid var(--border-color);
             border-radius: 6px;
-            padding: 10px 5px;
+            padding: 12px 5px;
             cursor: pointer;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            transition: all 0.2s;
-            font-size: 0.9rem;
             position: relative;
             overflow: hidden;
+            transition: all 0.2s;
         }
+        .block-btn:active { transform: scale(0.97); }
 
         .block-btn .block-name {
             font-weight: bold;
-            margin-bottom: 3px;
+            font-size: 0.9rem;
+            margin-bottom: 2px;
             z-index: 2;
         }
 
@@ -116,101 +136,81 @@
             z-index: 2;
         }
 
-        .block-btn:hover {
-            background: #f3ece2;
-            border-color: var(--btn-active);
-        }
+        .block-btn.building { border-color: var(--building-color); background: #fffcf7; }
+        .block-btn.building .block-name { color: var(--building-color); }
 
-        /* 興建中狀態 */
-        .block-btn.building {
-            border-color: var(--building-color);
-        }
-        .block-btn.building .block-name {
-            color: #a0522d;
-        }
-
-        /* 已完工狀態 */
         .block-btn.unlocked {
-            background: #f0f7ec;
+            background: #f1faee;
             border-color: var(--unlocked-color);
         }
-        .block-btn.unlocked .block-name {
-            color: var(--unlocked-color);
-        }
-        .block-btn.unlocked .block-status {
-            color: #709452;
-        }
+        .block-btn.unlocked .block-name { color: var(--unlocked-color); }
+        .block-btn.unlocked .block-status { color: #52b788; }
 
-        /* 底層動態營建進度條塗層 */
         .progress-bar {
             position: absolute;
-            left: 0;
-            bottom: 0;
-            top: 0;
-            width: 0%;
-            background: rgba(216, 164, 127, 0.35);
+            left: 0; bottom: 0; top: 0; width: 0%;
+            background: rgba(216, 164, 127, 0.3);
             z-index: 1;
             transition: width 0.1s linear;
         }
-        .block-btn.unlocked .progress-bar {
-            background: transparent;
-        }
 
         .system-controls {
-            padding: 15px;
+            padding: 12px;
             border-top: 2px solid var(--border-color);
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 6px;
             background: #ebdccb;
         }
 
         button, .file-label {
             background: #fdfaf6;
             border: 1px solid var(--border-color);
-            padding: 8px 12px;
+            padding: 8px 10px;
             border-radius: 4px;
             cursor: pointer;
             font-weight: bold;
             color: var(--text-color);
             text-align: center;
-            transition: all 0.2s;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
-        button:hover, .file-label:hover {
-            background: #f3ece2;
-            border-color: var(--btn-active);
-        }
-        button:active {
-            background: var(--btn-active);
-            color: #fff;
-        }
+        button:hover, .file-label:hover { background: #f3ece2; }
         input[type="file"] { display: none; }
 
-        /* 右側遊戲畫布區域 */
+        /* 🗺️ 地圖與動態事件容器 🗺️ */
         #game-container {
-            flex: 1;
-            position: relative;
-            height: 100%;
+            position: absolute;
+            left: 350px; top: 0; right: 0; bottom: 0;
             overflow: hidden;
             background: #e6dfd3;
         }
 
-        canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            cursor: grab;
-            width: 100%;
-            height: 100%;
-            display: block;
-        }
+        canvas { width: 100%; height: 100%; display: block; cursor: grab; }
         canvas:active { cursor: grabbing; }
+
+        /* 📣 全新政令/事件通知欄 📣 */
+        #event-ticker {
+            position: absolute;
+            top: 15px; left: 50%;
+            transform: translateX(-50%);
+            background: rgba(74, 60, 49, 0.92);
+            color: #f4eae1;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            z-index: 30;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border: 1px solid #ebdccb;
+            pointer-events: none;
+            display: none;
+            animation: fadeInDown 0.4s ease;
+        }
 
         #toast {
             position: absolute;
-            top: 20px;
-            right: 20px;
+            bottom: 20px; right: 20px;
             background: rgba(0,0,0,0.8);
             color: #fff;
             padding: 8px 16px;
@@ -219,38 +219,139 @@
             transition: opacity 0.3s;
             z-index: 100;
             pointer-events: none;
+            font-size: 0.85rem;
         }
 
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translate(-50%, -15px); }
+            to { opacity: 1; transform: translate(-50(), 0); }
+        }
+
+        /* 📱 手機端絕對布局及防卡死機制 📱 */
         @media (max-width: 768px) {
-            body { flex-direction: column; }
-            aside { width: 100%; height: 260px; border-right: none; border-bottom: 3px double var(--border-color); }
-            .blocks-grid { grid-template-columns: repeat(4, 1fr); padding: 8px; gap: 6px; }
-            .block-btn { padding: 6px 2px; font-size: 0.8rem; }
-            .block-btn .block-status { font-size: 0.7rem; }
-            .system-controls { flex-direction: row; padding: 8px; gap: 5px; }
-            .system-controls button, .system-controls .file-label { flex: 1; padding: 6px; font-size: 0.8rem; }
+            aside {
+                position: absolute;
+                top: 0; left: 0; right: 0;
+                width: 100% !important;
+                height: 145px !important;
+                border-right: none;
+                border-bottom: 2px solid var(--border-color);
+                display: block;
+                overflow: hidden;
+            }
+
+            .aside-header {
+                padding: 4px 8px;
+                height: 34px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                border-bottom: 1px solid var(--border-color);
+            }
+            .aside-header h2 { font-size: 0.95rem; margin-bottom: 0; }
+            .status-group {
+                display: flex;
+                flex-direction: row;
+                gap: 10px;
+                padding: 0;
+                border: none;
+                background: transparent;
+            }
+            .status-card { font-size: 0.72rem; display: flex; align-items: center; gap: 2px;}
+            .status-card span { font-size: 0.8rem; display: inline; }
+            .rank-banner { font-size: 0.68rem; padding: 1px 0; }
+            .grid-panel-title { display: none; }
+
+            /* 16坊橫向滾動御道 */
+            .blocks-grid {
+                position: absolute;
+                top: 52px; left: 0; right: 0;
+                height: 52px !important;
+                display: flex !important;
+                flex-direction: row !important;
+                overflow-x: auto !important;
+                overflow-y: hidden !important;
+                white-space: nowrap !important;
+                padding: 4px 8px !important;
+                gap: 6px !important;
+                background: #f3ece2 !important;
+                border-bottom: 1px solid var(--border-color);
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .block-btn {
+                display: inline-flex !important;
+                flex: 0 0 95px !important;
+                height: 42px !important;
+                padding: 0 2px !important;
+                font-size: 0.78rem !important;
+                justify-content: center;
+                align-items: center;
+            }
+            .block-btn .block-name { font-size: 0.78rem; margin-bottom: 0; }
+            .block-btn .block-status { font-size: 0.6rem; }
+
+            /* 底部治理按鈕 */
+            .system-controls {
+                position: absolute;
+                top: 104px; left: 0; right: 0;
+                height: 41px !important;
+                flex-direction: row !important;
+                padding: 5px 8px !important;
+                gap: 5px !important;
+                border-top: none;
+                background: #ebdccb;
+            }
+            .system-controls button, .system-controls .file-label {
+                flex: 1 !important;
+                height: 30px !important;
+                padding: 0 !important;
+                line-height: 28px;
+                font-size: 0.72rem !important;
+            }
+
+            #game-container {
+                position: absolute;
+                left: 0 !important;
+                top: 145px !important;
+                right: 0 !important;
+                bottom: 0 !important;
+                width: 100% !important;
+                height: calc(100vh - 145px) !important;
+            }
+
+            #event-ticker {
+                top: 155px;
+                font-size: 0.75rem;
+                padding: 6px 14px;
+                width: 85%;
+                text-align: center;
+            }
         }
     </style>
 </head>
 <body>
 
+    <div id="event-ticker">📜 府衙告示：商隊入城，全城营造速度提升！</div>
+
     <aside>
         <div class="aside-header">
             <h2>江山築邑錄</h2>
             <div class="status-group">
-                <div>已啟街區：<span id="unlocked-blocks">0</span> / 16</div>
-                <div>城中居民：<span id="pop-count">0</span> 人</div>
-                <div>繁榮總度：<span id="reputation-val">0</span></div>
+                <div class="status-card">坊:<span id="unlocked-blocks">0</span></div>
+                <div class="status-card">民:<span id="pop-count">8</span></div>
+                <div class="status-card">繁:<span id="reputation-val">0</span></div>
             </div>
         </div>
+        <div class="rank-banner" id="city-rank">當前治下：荒僻縣城</div>
         
-        <div class="grid-panel-title">🏛️ 十六坊營造（點擊逐步興建）</div>
+        <div class="grid-panel-title">🏛️ 十六坊營造（點擊指派流民營建）</div>
         <div class="blocks-grid" id="buttons-container"></div>
 
         <div class="system-controls">
-            <button id="btn-spawn">招募流民進城</button>
-            <button id="btn-export">匯出治理存檔</button>
-            <label class="file-label" for="btn-import">匯入治理存檔
+            <button id="btn-spawn">招募流民</button>
+            <button id="btn-export">導出存檔</button>
+            <label class="file-label" for="btn-import">導入存檔
                 <input type="file" id="btn-import" accept=".json">
             </label>
         </div>
@@ -263,6 +364,7 @@
     <div id="toast">提示訊息</div>
 
     <script>
+        // 圖片資源設定
         const imgEmptyCity = "Start.png"; 
         const imgFullCity = "Finish.png";  
 
@@ -275,92 +377,118 @@
         const GRID_ROWS = 4;
         const GRID_COLS = 4;
 
-        // 16街區設定：名稱與各自所需的營建總秒數（非一步到位）
-        const blockConfigs = [
-            { name: "永安坊", duration: 10 }, { name: "宣陽坊", duration: 12 }, { name: "崇仁坊", duration: 15 }, { name: "興化坊", duration: 15 },
-            { name: "朱雀坊", duration: 25 }, { name: "安興坊", duration: 18 }, { name: "延壽坊", duration: 20 }, { name: "長興坊", duration: 20 },
-            { name: "輔興坊", duration: 15 }, { name: "敦化坊", duration: 15 }, { name: "平康坊", duration: 30 }, { name: "安定坊", duration: 18 },
-            { name: "通化坊", duration: 22 }, { name: "建康坊", duration: 22 }, { name: "長安坊", duration: 30 }, { name: "大興坊", duration: 35 }
+        const CITY_GATES = [
+            { x: 683, y: 15, name: "北城門" },  
+            { x: 683, y: 745, name: "南城門" }  
         ];
 
-        // 遊戲核心狀態 (儲存各區的營造狀態與進度)
+        const blockConfigs = [
+            { name: "永安坊", duration: 8 },  { name: "宣陽坊", duration: 10 }, { name: "崇仁坊", duration: 12 }, { name: "興化坊", duration: 12 },
+            { name: "朱雀坊", duration: 18 }, { name: "安興坊", duration: 14 }, { name: "延壽坊", duration: 15 }, { name: "長興坊", duration: 15 },
+            { name: "輔興坊", duration: 12 }, { name: "敦化坊", duration: 12 }, { name: "平康坊", duration: 22 }, { name: "安定坊", duration: 14 },
+            { name: "通化坊", duration: 16 }, { name: "建康坊", duration: 16 }, { name: "長安坊", duration: 25 }, { name: "大興坊", duration: 30 }
+        ];
+
+        // 核心狀態
         let gameState = {
-            // blockStates 儲存結構： { index: { status: 'none'|'building'|'done', progress: 0, elapsed: 0 } }
             blockStates: {},
-            populationCount: 10,
-            citizens: []
+            populationCount: 8,
+            citizens: [],
+            currentEvent: null,
+            eventModifier: 1.0, 
+            clickEffects: []     
         };
 
-        // 初始化 16 街區數據結構
-        for (let i = 0; i < 16; i++) {
-            gameState.blockStates[i] = {
-                status: 'none',   // none: 荒蕪, building: 興建中, done: 完工
-                progress: 0       // 0 ~ 100 之間
-            };
+        // 輕量古典互動音效合成器 (免外部音訊檔案)
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playBeep(type) {
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                if (type === 'click') {
+                    osc.type = 'triangle'; osc.frequency.setValueAtTime(280, audioCtx.currentTime);
+                    gain.gain.setValueAtTime(0.15, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+                    osc.start(); osc.stop(audioCtx.currentTime + 0.08);
+                } else if (type === 'success') {
+                    osc.type = 'sine'; osc.frequency.setValueAtTime(520, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(840, audioCtx.currentTime + 0.15);
+                    gain.gain.setValueAtTime(0.2, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                    osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+                } else if (type === 'event') {
+                    osc.type = 'sawtooth'; osc.frequency.setValueAtTime(180, audioCtx.currentTime);
+                    osc.frequency.linearRampToValueAtTime(320, audioCtx.currentTime + 0.2);
+                    gain.gain.setValueAtTime(0.1, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+                    osc.start(); osc.stop(audioCtx.currentTime + 0.4);
+                }
+            } catch(e){}
         }
 
-        let mapTransform = { x: 0, y: 0, scale: 1, isDragging: false, startX: 0, startY: 0 };
+        // 初始化結構
+        for (let i = 0; i < 16; i++) {
+            gameState.blockStates[i] = { status: 'none', progress: 0 };
+        }
+
+        let mapTransform = { x: 0, y: 0, scale: 1, isDragging: false, startX: 0, startY: 0, dragged: false };
 
         const bgImages = { empty: new Image(), full: new Image(), loadedCount: 0 };
         bgImages.empty.src = imgEmptyCity;
         bgImages.full.src = imgFullCity;
 
-        function imageLoaded() {
-            bgImages.loadedCount++;
-            if(bgImages.loadedCount >= 2) {
-                buildGridButtons();
-                resetMapToFillAuto();
-                initCitizens();
-                
-                // 動啟背景時間輪詢器，每 100 毫秒計算一次建造進度
-                setInterval(updateConstructionProgress, 100);
-                animate();
-            }
-        }
-        bgImages.empty.onload = imageLoaded;
-        bgImages.full.onload = imageLoaded;
+        // 解耦安全載入：介面立即生成
+        window.addEventListener('DOMContentLoaded', () => {
+            buildGridButtons();
+            initCitizens();
+            setInterval(updateConstructionProgress, 100);
+            setInterval(triggerRandomEvent, 16000); // 每16秒觸發隨機事件
+            animate();
+        });
 
-        // 計算各街區內『米白色道路與走道』的活動點
+        bgImages.empty.onload = bgImages.full.onload = () => {
+            bgImages.loadedCount++;
+            if(bgImages.loadedCount >= 2) resetMapToFillAuto();
+        };
+
+        // 隨機事件池
+        const eventsPool = [
+            { name: "朝廷盛典", desc: "📜 聖上登基大典，普天同慶！工匠幹勁倍增（營造速度翻倍）", modifier: 2.0, duration: 8000 },
+            { name: "天降祥瑞", desc: "✨ 雲端驚現祥龍，百姓歡騰！吸引大量外地流民進城", modifier: 1.0, duration: 6000, action: () => { for(let i=0;i<3;i++) spawnCitizenSilent(); } },
+            { name: "商隊造訪", desc: "📦 西域龐大商隊入城物資充沛，全城建設效率小幅提升", modifier: 1.3, duration: 10000 },
+            { name: "酷暑難耐", desc: "☀️ 烈日當空，酷熱難耐，營建進度稍微放緩", modifier: 0.6, duration: 7000 }
+        ];
+
+        function triggerRandomEvent() {
+            const ev = eventsPool[Math.floor(Math.random() * eventsPool.length)];
+            gameState.currentEvent = ev;
+            gameState.eventModifier = ev.modifier;
+            
+            const ticker = document.getElementById('event-ticker');
+            ticker.innerText = ev.desc;
+            ticker.style.display = 'block';
+            playBeep('event');
+
+            if(ev.action) ev.action();
+
+            setTimeout(() => {
+                ticker.style.display = 'none';
+                gameState.currentEvent = null;
+                gameState.eventModifier = 1.0;
+            }, ev.duration);
+        }
+
+        // 尋路與坐標系統
         function getRandomValidPathPoint(blockIndex) {
             const blockW = BASE_WIDTH / GRID_COLS;
             const blockH = BASE_HEIGHT / GRID_ROWS;
             const r = Math.floor(blockIndex / GRID_COLS);
             const c = blockIndex % GRID_COLS;
-            const startX = c * blockW;
-            const startY = r * blockH;
-
-            const pathType = Math.random();
-            let localX, localY;
-
-            if (pathType < 0.35) {
-                localX = Math.random() * blockW;
-                localY = blockH * 0.42 + Math.random() * (blockH * 0.16); 
-            } else if (pathType < 0.70) {
-                localX = blockW * 0.42 + Math.random() * (blockW * 0.16);
-                localY = Math.random() * blockH;
-            } else {
-                if (Math.random() > 0.5) {
-                    localX = Math.random() * blockW;
-                    localY = Math.random() > 0.5 ? (blockH * 0.05 + Math.random() * (blockH * 0.1)) : (blockH * 0.85 + Math.random() * (blockH * 0.1));
-                } else {
-                    localX = Math.random() > 0.5 ? (blockW * 0.05 + Math.random() * (blockW * 0.1)) : (blockW * 0.85 + Math.random() * (blockW * 0.1));
-                    localY = Math.random() * blockH;
-                }
-            }
-
-            let finalX = startX + localX;
-            let finalY = startY + localY;
-
-            if (finalX > BASE_WIDTH * 0.22 && finalX < BASE_WIDTH * 0.78 && finalY > BASE_HEIGHT * 0.25 && finalY < BASE_HEIGHT * 0.75) {
-                if (!(finalX > BASE_WIDTH * 0.35 && finalX < BASE_WIDTH * 0.65 && finalY > BASE_HEIGHT * 0.35 && finalY < BASE_HEIGHT * 0.65)) {
-                    if (Math.random() > 0.5) {
-                        finalX = finalX < BASE_WIDTH * 0.5 ? BASE_WIDTH * 0.18 : BASE_WIDTH * 0.82;
-                    } else {
-                        finalY = finalY < BASE_HEIGHT * 0.5 ? BASE_HEIGHT * 0.18 : BASE_HEIGHT * 0.82;
-                    }
-                }
-            }
-            return { x: finalX, y: finalY };
+            const startX = c * blockW + blockW*0.15;
+            const startY = r * blockH + blockH*0.15;
+            return {
+                x: startX + Math.random() * (blockW * 0.7),
+                y: startY + Math.random() * (blockH * 0.7)
+            };
         }
 
         function buildGridButtons() {
@@ -373,158 +501,184 @@
                 btn.innerHTML = `
                     <div class="progress-bar" id="progress-${i}"></div>
                     <span class="block-name">${blockConfigs[i].name}</span>
-                    <span class="block-status" id="block-status-${i}">荒蕪待興</span>
+                    <span class="block-status" id="block-status-${i}">待興</span>
                 `;
-                btn.addEventListener('click', () => startDevelopingBlock(i));
+                btn.addEventListener('click', () => { playBeep('click'); startDevelopingBlock(i); });
                 container.appendChild(btn);
             }
             updateDOM();
         }
 
-        // 觸發街區動工
         function startDevelopingBlock(index) {
             let state = gameState.blockStates[index];
             if (state.status === 'none') {
                 state.status = 'building';
                 state.progress = 0;
-                showToast(`【${blockConfigs[index].name}】懸賞開墾，工匠進場！`);
+                showToast(`【${blockConfigs[index].name}】大興土木，工匠奔赴現場！`);
                 
-                // 派遣2名工人前往該施工點現地勞動
+                // 指派特定工人趕往
                 for(let k=0; k<2; k++) {
-                    const pt = getRandomValidPathPoint(index);
-                    let worker = new Citizen(pt.x, pt.y);
-                    worker.state = 'work'; // 設為強制工作打鐵狀態
+                    const gate = CITY_GATES[Math.floor(Math.random() * CITY_GATES.length)];
+                    const targetPt = getRandomValidPathPoint(index);
+                    let worker = new Citizen(gate.x, gate.y); 
+                    worker.targetX = targetPt.x; worker.targetY = targetPt.y;
+                    worker.state = 'walk_to_work'; 
                     gameState.citizens.push(worker);
                 }
                 gameState.populationCount = gameState.citizens.length;
                 updateDOM();
-            } else if (state.status === 'building') {
-                showToast(`【${blockConfigs[index].name}】工匠正揮汗營建中（${Math.floor(state.progress)}%）`);
-            } else {
-                showToast(`【${blockConfigs[index].name}】已成恢弘盛世。`);
             }
         }
 
-        // 定時進度推進處理核心 (100ms 觸發一次)
         function updateConstructionProgress() {
             let needUpdateDOM = false;
-
             for (let i = 0; i < 16; i++) {
                 let state = gameState.blockStates[i];
                 if (state.status === 'building') {
-                    // 每 100ms 推進的百分比 = 100 / (總秒數 * 10)
-                    let step = 100 / (blockConfigs[i].duration * 10);
+                    // 速度受隨機事件 Modifier 疊加影響
+                    let step = (100 / (blockConfigs[i].duration * 10)) * gameState.eventModifier;
                     state.progress += step;
-
                     if (state.progress >= 100) {
                         state.progress = 100;
                         state.status = 'done';
-                        showToast(`🎉 賀！【${blockConfigs[i].name}】落成完工！`);
+                        playBeep('success');
+                        showToast(`🎉【${blockConfigs[i].name}】盛世落成！`);
                     }
                     needUpdateDOM = true;
                 }
             }
-
-            if (needUpdateDOM) {
-                updateDOM();
-            }
+            if (needUpdateDOM) updateDOM();
         }
 
-        // 居民 AI 粒子
+        // 流民/市民對話語錄
+        const quotes = ["家給人足，盛世之兆！", "今天又是努力營造的一天！", "聽說平康坊熱鬧非凡...", "主公英明，城池越發繁華了！", "加把勁，快完工了！"];
+
         class Citizen {
-            constructor(x = null, y = null) {
-                if (x === null || y === null) {
-                    const activeBlocks = getAvailableBlocks();
-                    const targetB = activeBlocks[Math.floor(Math.random() * activeBlocks.length)];
-                    const pt = getRandomValidPathPoint(targetB);
-                    this.x = pt.x; this.y = pt.y;
+            constructor(startX = null, startY = null) {
+                if (startX === null || startY === null) {
+                    const gate = CITY_GATES[Math.floor(Math.random() * CITY_GATES.length)];
+                    this.x = gate.x; this.y = gate.y;
+                    this.state = 'wander'; this.setNextWanderTarget();
                 } else {
-                    this.x = x; this.y = y;
+                    this.x = startX; this.y = startY;
+                    this.targetX = startX; this.targetY = startY;
+                    this.state = 'wander';
                 }
-                this.targetX = this.x;
-                this.targetY = this.y;
-                this.speed = 0.6 + Math.random() * 0.6;
-                this.color = ['#4a5759', '#b85c38', '#d8a47f', '#2f4f4f', '#6b705c', '#a3b18a'][Math.floor(Math.random() * 6)];
-                this.size = 3.2 + Math.random() * 1.5;
-                this.state = 'wander'; 
-                this.stateTimer = Math.random() * 100;
+                this.speed = 0.8 + Math.random() * 0.8;
+                this.color = ['#4a5759', '#b85c38', '#bc6c25', '#2f4f4f', '#6b705c'][Math.floor(Math.random() * 5)];
+                this.size = 3.5 + Math.random() * 1.0;
+                this.stateTimer = 40 + Math.random() * 80;
+                this.bubbleText = "";
+                this.bubbleTimer = 0;
+            }
+
+            setNextWanderTarget() {
+                const activeBlocks = getAvailableBlocks();
+                const targetB = activeBlocks[Math.floor(Math.random() * activeBlocks.length)];
+                const nextPt = getRandomValidPathPoint(targetB);
+                this.targetX = nextPt.x; this.targetY = nextPt.y;
+            }
+
+            saySomething() {
+                this.bubbleText = quotes[Math.floor(Math.random() * quotes.length)];
+                this.bubbleTimer = 90; // 顯示3秒
             }
 
             update() {
+                if (this.bubbleTimer > 0) this.bubbleTimer--;
+
+                if (this.state === 'walk_to_work') {
+                    const dx = this.targetX - this.x; const dy = this.targetY - this.y;
+                    const dist = Math.hypot(dx, dy);
+                    if (dist > 5) {
+                        this.x += (dx / dist) * this.speed; this.y += (dy / dist) * this.speed;
+                    } else {
+                        this.state = 'work'; this.stateTimer = 100 + Math.random() * 80;
+                    }
+                    return;
+                }
+
                 this.stateTimer--;
                 if(this.stateTimer <= 0) {
                     this.state = Math.random() > 0.3 ? 'wander' : 'work';
-                    this.stateTimer = 100 + Math.random() * 150;
-                    
-                    if(this.state === 'wander') {
-                        const activeBlocks = getAvailableBlocks();
-                        const targetB = activeBlocks[Math.floor(Math.random() * activeBlocks.length)];
-                        const nextPt = getRandomValidPathPoint(targetB);
-                        this.targetX = nextPt.x;
-                        this.targetY = nextPt.y;
-                    }
+                    this.stateTimer = 120 + Math.random() * 120;
+                    if(this.state === 'wander') this.setNextWanderTarget();
+                    if(Math.random() > 0.85) this.saySomething(); // 隨機說話
                 }
 
                 if (this.state === 'wander') {
-                    const dx = this.targetX - this.x;
-                    const dy = this.targetY - this.y;
+                    const dx = this.targetX - this.x; const dy = this.targetY - this.y;
                     const dist = Math.hypot(dx, dy);
                     if (dist > 4) {
-                        this.x += (dx / dist) * this.speed;
-                        this.y += (dy / dist) * this.speed;
+                        this.x += (dx / dist) * this.speed; this.y += (dy / dist) * this.speed;
                     }
                 }
             }
 
             draw(context) {
                 context.save();
+                // 陰影
                 context.beginPath();
                 context.ellipse(this.x, this.y + this.size * 0.8, this.size, this.size * 0.4, 0, 0, Math.PI * 2);
-                context.fillStyle = 'rgba(0, 0, 0, 0.13)';
-                context.fill();
+                context.fillStyle = 'rgba(0, 0, 0, 0.15)'; context.fill();
+                // 身體
+                context.beginPath(); context.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                context.fillStyle = this.color; context.fill();
+                // 頭部斗笠
+                context.beginPath(); context.arc(this.x, this.y - this.size * 0.8, this.size * 0.7, 0, Math.PI * 2);
+                context.fillStyle = '#ebd59b'; context.fill();
 
-                context.beginPath();
-                context.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                context.fillStyle = this.color;
-                context.fill();
+                // 狀態小標籤
+                if(this.state === 'work' || this.state === 'walk_to_work') {
+                    if (Math.sin(Date.now() / 150) > 0) {
+                        context.font = '10px sans-serif';
+                        context.fillText(this.state === 'walk_to_work' ? '🎒' : '⚒️', this.x + this.size + 1, this.y - 2);
+                    }
+                }
 
-                context.beginPath();
-                context.arc(this.x, this.y - this.size * 0.8, this.size * 0.6, 0, Math.PI * 2);
-                context.fillStyle = '#ebd59b';
-                context.fill();
-
-                if(this.state === 'work' && Math.sin(Date.now() / 150) > 0) {
+                // 渲染對話氣泡
+                if (this.bubbleTimer > 0 && this.bubbleText) {
+                    context.font = 'bold 9px sans-serif';
+                    const textW = context.measureText(this.bubbleText).width;
+                    context.fillStyle = 'rgba(255,251,247,0.92)';
+                    context.strokeStyle = '#4a3c31';
+                    context.lineWidth = 1;
+                    // 氣泡框
+                    context.beginPath();
+                    context.roundRect(this.x - textW/2 - 5, this.y - this.size - 18, textW + 10, 14, 4);
+                    context.fill(); context.stroke();
+                    // 氣泡文字
                     context.fillStyle = '#4a3c31';
-                    context.font = '9px sans-serif';
-                    context.fillText('⚒️', this.x + this.size + 1, this.y - 2);
+                    context.fillText(this.bubbleText, this.x - textW/2, this.y - this.size - 8);
                 }
                 context.restore();
             }
         }
 
-        // 取得當前有活動權限的街區（已解鎖、興建中、或預設中央安全街區）
         function getAvailableBlocks() {
             let list = [];
             for(let i=0; i<16; i++) {
-                if(gameState.blockStates[i].status !== 'none') {
-                    list.push(i);
-                }
+                if(gameState.blockStates[i].status !== 'none') list.push(i);
             }
             return list.length > 0 ? list : [5, 6, 9, 10];
         }
 
         function initCitizens() {
             gameState.citizens = [];
-            for(let i=0; i<gameState.populationCount; i++) {
-                gameState.citizens.push(new Citizen());
-            }
+            for(let i=0; i<gameState.populationCount; i++) gameState.citizens.push(new Citizen()); 
         }
 
-        // 畫布動態渲染（實現 Alpha 漸進無縫融合）
+        function spawnCitizenSilent() {
+            const gate = CITY_GATES[Math.floor(Math.random() * CITY_GATES.length)];
+            let c = new Citizen(gate.x, gate.y); c.setNextWanderTarget();
+            gameState.citizens.push(c);
+            gameState.populationCount = gameState.citizens.length;
+        }
+
+        // 繪製地圖與特效
         function drawMap() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = "#ebdccb";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#ebdccb"; ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             ctx.save();
             ctx.translate(mapTransform.x, mapTransform.y);
@@ -536,45 +690,53 @@
             for (let r = 0; r < GRID_ROWS; r++) {
                 for (let c = 0; c < GRID_COLS; c++) {
                     const i = r * GRID_COLS + c;
-                    const srcX = c * blockW;
-                    const srcY = r * blockH;
+                    const srcX = c * blockW; const srcY = r * blockH;
                     let state = gameState.blockStates[i];
 
                     if (state.status === 'none') {
-                        // 1. 荒蕪狀態：完全繪製空城圖
-                        if (bgImages.empty.complete) {
-                            ctx.drawImage(bgImages.empty, srcX, srcY, blockW, blockH, srcX, srcY, blockW, blockH);
-                        }
+                        if (bgImages.empty.complete) ctx.drawImage(bgImages.empty, srcX, srcY, blockW, blockH, srcX, srcY, blockW, blockH);
                     } else if (state.status === 'building') {
-                        // 2. 興建中狀態：根據進度百分比，進行動態 Alpha 透明度疊加
-                        if (bgImages.empty.complete) {
-                            ctx.drawImage(bgImages.empty, srcX, srcY, blockW, blockH, srcX, srcY, blockW, blockH);
-                        }
+                        if (bgImages.empty.complete) ctx.drawImage(bgImages.empty, srcX, srcY, blockW, blockH, srcX, srcY, blockW, blockH);
                         if (bgImages.full.complete) {
-                            ctx.save();
-                            ctx.globalAlpha = state.progress / 100; // 0% 漸變到 100% 透明度
+                            ctx.save(); ctx.globalAlpha = state.progress / 100;
                             ctx.drawImage(bgImages.full, srcX, srcY, blockW, blockH, srcX, srcY, blockW, blockH);
                             ctx.restore();
                         }
                     } else if (state.status === 'done') {
-                        // 3. 完工狀態：直接 100% 繪製完工繁榮圖
-                        if (bgImages.full.complete) {
-                            ctx.drawImage(bgImages.full, srcX, srcY, blockW, blockH, srcX, srcY, blockW, blockH);
-                        }
+                        if (bgImages.full.complete) ctx.drawImage(bgImages.full, srcX, srcY, blockW, blockH, srcX, srcY, blockW, blockH);
                     }
                 }
             }
 
-            // 渲染小人
+            // 更新並繪製所有市民
             gameState.citizens.forEach(citizen => {
-                citizen.update();
-                citizen.draw(ctx);
+                citizen.update(); citizen.draw(ctx);
             });
+
+            // 繪製點擊波紋視覺反饋特效
+            for(let i = gameState.clickEffects.length - 1; i >= 0; i--) {
+                let fx = gameState.clickEffects[i];
+                fx.radius += 1.5; fx.alpha -= 0.04;
+                if(fx.alpha <= 0) { gameState.clickEffects.splice(i, 1); continue; }
+                ctx.save();
+                ctx.beginPath(); ctx.arc(fx.x, fx.y, fx.radius, 0, Math.PI*2);
+                ctx.strokeStyle = `rgba(184, 92, 56, ${fx.alpha})`;
+                ctx.lineWidth = 2; ctx.stroke();
+                ctx.restore();
+            }
 
             ctx.restore();
         }
 
-        // 同步按鈕樣式與進度
+        // 治理頭銜系統
+        const rankTitles = [
+            { req: 0, title: "當前治下：荒僻縣城 🛖" },
+            { req: 30, title: "當前治下：百里雄鎮 🪵" },
+            { req: 70, title: "當前治下：富庶州府 🏯" },
+            { req: 120, title: "當前治下：江山巨邑 🗺️" },
+            { req: 160, title: "當前治下：萬世盛世盛京 👑" }
+        ];
+
         function updateDOM() {
             let doneCount = 0;
             for (let i = 0; i < 16; i++) {
@@ -585,120 +747,142 @@
 
                 if (btn && statusTxt && prgBar) {
                     prgBar.style.width = `${state.progress}%`;
-
                     if (state.status === 'done') {
-                        doneCount++;
-                        btn.className = 'block-btn unlocked';
-                        statusTxt.innerText = "盛世繁榮";
+                        doneCount++; btn.className = 'block-btn unlocked'; statusTxt.innerText = "繁榮";
                     } else if (state.status === 'building') {
-                        btn.className = 'block-btn building';
-                        statusTxt.innerText = `營造中 ${Math.floor(state.progress)}%`;
+                        btn.className = 'block-btn building'; statusTxt.innerText = `營建 ${Math.floor(state.progress)}%`;
                     } else {
-                        btn.className = 'block-btn';
-                        statusTxt.innerText = "荒蕪待興";
+                        btn.className = 'block-btn'; statusTxt.innerText = "待興";
                     }
                 }
             }
-
+            
+            const totalRep = doneCount * 10;
             document.getElementById('unlocked-blocks').innerText = doneCount;
-            document.getElementById('reputation-val').innerText = doneCount * 10;
+            document.getElementById('reputation-val').innerText = totalRep;
             document.getElementById('pop-count').innerText = gameState.populationCount;
+
+            // 刷新治理評級
+            let currentTitle = rankTitles[0].title;
+            for(let r of rankTitles) {
+                if(totalRep >= r.req) currentTitle = r.title;
+            }
+            document.getElementById('city-rank').innerText = currentTitle;
         }
 
         function showToast(msg) {
             const toast = document.getElementById('toast');
-            toast.innerText = msg;
-            toast.style.opacity = 1;
+            toast.innerText = msg; toast.style.opacity = 1;
             setTimeout(() => toast.style.opacity = 0, 2000);
         }
 
         function resetMapToFillAuto() {
             if (!canvas.width || !canvas.height) return;
-            const scaleX = canvas.width / BASE_WIDTH;
-            const scaleY = canvas.height / BASE_HEIGHT;
-            mapTransform.scale = Math.max(scaleX, scaleY) * 0.95; 
+            const scaleX = canvas.width / BASE_WIDTH; const scaleY = canvas.height / BASE_HEIGHT;
+            mapTransform.scale = Math.min(scaleX, scaleY) * 0.95; 
             mapTransform.x = (canvas.width - BASE_WIDTH * mapTransform.scale) / 2;
             mapTransform.y = (canvas.height - BASE_HEIGHT * mapTransform.scale) / 2;
         }
 
         function resizeCanvas() {
-            canvas.width = container.clientWidth;
-            canvas.height = container.clientHeight;
-            resetMapToFillAuto();
-            drawMap();
+            canvas.width = container.clientWidth; canvas.height = container.clientHeight;
+            resetMapToFillAuto(); drawMap();
         }
         window.addEventListener('resize', resizeCanvas);
         setTimeout(resizeCanvas, 150);
 
-        function animate() {
-            drawMap();
-            requestAnimationFrame(animate);
-        }
+        function animate() { drawMap(); requestAnimationFrame(animate); }
+
+        // 點擊Canvas地圖互動 (微觀點擊市民、對話、激發波紋)
+        canvas.addEventListener('click', (e) => {
+            if (mapTransform.dragged) return; // 如果是拖拽就不觸發點擊
+            playBeep('click');
+
+            // 計算點擊對應在 Canvas 世界坐標系中的真實位置
+            const rect = canvas.getBoundingClientRect();
+            const clickX = (e.clientX - rect.left - mapTransform.x) / mapTransform.scale;
+            const clickY = (e.clientY - rect.top - mapTransform.y) / mapTransform.scale;
+
+            // 檢測是否點擊到某個市民
+            let clickedSomeone = false;
+            for(let citizen of gameState.citizens) {
+                if(Math.hypot(citizen.x - clickX, citizen.y - clickY) < citizen.size * 3.5) {
+                    citizen.saySomething();
+                    // 點擊市民獎勵微量繁榮度反饋
+                    showToast(`互動反饋：市民情緒高漲！`);
+                    clickedSomeone = true;
+                    break;
+                }
+            }
+
+            // 若沒點到人，在空地上釋放水波紋
+            if(!clickedSomeone) {
+                gameState.clickEffects.push({ x: clickX, y: clickY, radius: 2, alpha: 1.0 });
+                // 吸引最近的一名巡邏市民走過來看看
+                if(gameState.citizens.length > 0) {
+                    let idleCitizens = gameState.citizens.filter(c => c.state === 'wander');
+                    if(idleCitizens.length > 0) {
+                        let closest = idleCitizens[0]; let minDist = Infinity;
+                        for(let c of idleCitizens) {
+                            let d = Math.hypot(c.x - clickX, c.y - clickY);
+                            if(d < minDist) { minDist = d; closest = c; }
+                        }
+                        if(minDist < 250) { closest.targetX = clickX; closest.targetY = clickY; }
+                    }
+                }
+            }
+        });
 
         document.getElementById('btn-spawn').addEventListener('click', () => {
-            gameState.citizens.push(new Citizen());
+            const gate = CITY_GATES[Math.floor(Math.random() * CITY_GATES.length)];
+            let newCitizen = new Citizen(gate.x, gate.y);
+            newCitizen.state = 'walk_to_work'; newCitizen.setNextWanderTarget();
+            gameState.citizens.push(newCitizen);
             gameState.populationCount = gameState.citizens.length;
-            showToast("流民進城安居！");
+            showToast(`📢 招募令下達，流民自【${gate.name}】應召入城！`);
             updateDOM();
         });
 
-        // 匯出存檔
         document.getElementById('btn-export').addEventListener('click', () => {
-            const saveData = {
-                blockStates: gameState.blockStates,
-                populationCount: gameState.populationCount,
-                savedAt: new Date().toISOString()
-            };
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(saveData, null, 4));
+            const saveData = { blockStates: gameState.blockStates, populationCount: gameState.populationCount };
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(saveData));
             const dlAnchor = document.createElement('a');
-            dlAnchor.setAttribute("href", dataStr);
-            dlAnchor.setAttribute("download", `ancient_city_time_save.json`);
-            document.body.appendChild(dlAnchor);
-            dlAnchor.click();
-            dlAnchor.remove();
-            showToast("治理進度存檔已導出！");
+            dlAnchor.setAttribute("href", dataStr); dlAnchor.setAttribute("download", `ancient_city_strategy_save.json`);
+            document.body.appendChild(dlAnchor); dlAnchor.click(); dlAnchor.remove();
+            showToast("治國存檔成功！");
         });
 
-        // 匯入存檔
         document.getElementById('btn-import').addEventListener('change', (e) => {
             const fileReader = new FileReader();
             if(!e.target.files[0]) return;
-            
             fileReader.onload = function(event) {
                 try {
                     const parsed = JSON.parse(event.target.result);
-                    if(parsed.blockStates !== undefined && parsed.populationCount !== undefined) {
+                    if(parsed.blockStates) {
                         gameState.blockStates = parsed.blockStates;
-                        gameState.populationCount = parsed.populationCount;
-                        initCitizens(); 
-                        showToast("成功還原營造進度！");
-                        updateDOM();
-                    } else {
-                        showToast("存檔格式不合。");
+                        gameState.populationCount = parsed.populationCount || 8;
+                        initCitizens(); showToast("大印歸位，存檔載入成功！"); updateDOM();
                     }
-                } catch (err) {
-                    showToast("讀取存檔失敗。");
-                }
+                } catch (err) { showToast("讀取存檔失敗。"); }
             };
             fileReader.readAsText(e.target.files[0]);
         });
 
-        // 拖曳縮放
+        // 拖曳平移地圖機制
         function getEventPos(e) {
             if (e.touches && e.touches.length > 0) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
             return { x: e.clientX, y: e.clientY };
         }
         function startDrag(e) {
             const pos = getEventPos(e);
-            mapTransform.isDragging = true;
-            mapTransform.startX = pos.x - mapTransform.x;
-            mapTransform.startY = pos.y - mapTransform.y;
+            mapTransform.isDragging = true; mapTransform.dragged = false;
+            mapTransform.startX = pos.x - mapTransform.x; mapTransform.startY = pos.y - mapTransform.y;
         }
         function doDrag(e) {
             if (!mapTransform.isDragging) return;
+            mapTransform.dragged = true;
             const pos = getEventPos(e);
-            mapTransform.x = pos.x - mapTransform.startX;
-            mapTransform.y = pos.y - mapTransform.startY;
+            mapTransform.x = pos.x - mapTransform.startX; mapTransform.y = pos.y - mapTransform.startY;
         }
         function endDrag() { mapTransform.isDragging = false; }
 
@@ -711,9 +895,7 @@
 
         canvas.addEventListener('wheel', (e) => {
             e.preventDefault();
-            const zoomFactor = 1.1;
-            if (e.deltaY < 0) mapTransform.scale *= zoomFactor;
-            else mapTransform.scale /= zoomFactor;
+            if (e.deltaY < 0) mapTransform.scale *= 1.1; else mapTransform.scale /= 1.1;
             mapTransform.scale = Math.max(0.2, Math.min(mapTransform.scale, 5));
         }, { passive: false });
     </script>
